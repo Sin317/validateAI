@@ -1,4 +1,10 @@
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+api_key = os.getenv('API_KEY')
 
 def llm_call(prompt, api_key):
     print(prompt)
@@ -6,7 +12,6 @@ def llm_call(prompt, api_key):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are a research assistant"},
             {"role": "user", "content": prompt}
         ],
         max_tokens=300
@@ -16,12 +21,16 @@ def llm_call(prompt, api_key):
     return output
 
 def startup_idea_summarize(answers, api_key):
-    prompt = "Based on answers " + ' '.join(answers) + " summarize to give final startup idea"
+    answers_string = " ".join(answers)
+    prompt = answers_string + " Based on above information give me summarized startup idea, give output as just idea"
     return llm_call(prompt, api_key)
 
 def clarification_questions(api_key):
     questions = [
-        "Describe your start-up idea in one or two sentences."
+        "Describe your start-up idea in one or two sentences."#,
+        # "What specific problem does your start-up solve?",
+        # "Who are your target customers, and how does the problem impact them?",
+        # "What makes your solution unique compared to existing alternatives?"
     ]
     answers = []
     for question in questions:
@@ -35,7 +44,7 @@ def fetch_data(client, prompt, idea):
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "give direct output of asked question"},
                 {"role": "user", "content": prompt.replace("[Insert Start-up Idea]", idea)}
             ],
             max_tokens=500
@@ -76,8 +85,30 @@ def generate_report(idea, insights):
         report += f"### {section}\n{content}\n\n"
     return report
 
+def generate_signup_page(idea, api_key):
+    client = OpenAI(api_key=api_key)
+    prompt = 'give code for attractive landing page with appealing ui to signup for email waitlist for start-up idea: [Insert Start-up Idea]" '
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": 'give direct HTML code output only no extra statements, on submission it should redirect to "https://thank-you-page-hackathon.vercel.app/" use creative words to appeal users to signup'},
+                {"role": "user", "content": prompt.replace("[Insert Start-up Idea]", idea)}
+            ],
+            max_tokens=1500
+        )
+        output_html = response.choices[0].message.content
+        lines = output_html.split("\n")  # Split into lines
+        trimmed_html = "\n".join(lines[2:-1])
+        with open("signup.html", "w") as file:
+            file.write(trimmed_html)
+        return "HTML code for signup page has been generated and saved to signup.html"
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
 def main():
-    api_key = ''
     print("Welcome to the Startup Idea Analyzer!")
     looks_good = False
     while not looks_good:
@@ -87,8 +118,9 @@ def main():
         if yes_or_no == "yes":
             looks_good = True
     
-    insights = analyze_startup(idea, api_key)
-    print(insights)
+    print(generate_signup_page(idea, api_key))
+    # insights = analyze_startup(idea, api_key)
+    # print(insights)
     # report = generate_report(idea, insights)
     # print(report)
 
