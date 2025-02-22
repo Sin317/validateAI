@@ -20,7 +20,7 @@ conversation_history = []
 
 history = []
 # Load stored embeddings for startup ideas
-with open("embeddings_startups_1k.json", "r") as f:
+with open("embeddings_startups.json", "r") as f:
     embedding_data = json.load(f)
 
 # Convert embeddings to NumPy arrays for similarity search
