@@ -25,6 +25,27 @@ from phoenix.evals import (
 
 
 
+
+
+def generate_roadmap(idea, api_key):
+    client = OpenAI(api_key=api_key)
+    prompt = 'Generate roadmap: [Insert Start-up Idea]" '
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": 'give direct output of question'},
+                {"role": "user", "content": prompt.replace("[Insert Start-up Idea]", idea)}
+            ],
+            max_tokens=1500
+        )
+        output_message = response.choices[0].message.content
+        return output_message
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
 def generate_signup_page(idea, api_key):
     client = OpenAI(api_key=api_key)
     prompt = 'give code for attractive landing page with appealing ui to signup for email waitlist for start-up idea: [Insert Start-up Idea]" '
@@ -132,7 +153,7 @@ def gradio_interface(user_input, conversation_history=None, confirmation=False):
 
 
     if not confirmation:
-        return history, "Please confirm first", "Please confirm first", conversation_history
+        return history, "Please confirm first", "Please confirm first", "Please confirm first", conversation_history
 
     # Query similar startups
     similar_startups = query_startup_ideas(user_input)
@@ -167,7 +188,7 @@ def gradio_interface(user_input, conversation_history=None, confirmation=False):
         response = chatgpt.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "You are a Startup Idea Validator. Help the user with their ideas {prompt}"},
                 {"role": "user", "content":  user_input}
             ],
             max_tokens=500
@@ -186,7 +207,9 @@ def gradio_interface(user_input, conversation_history=None, confirmation=False):
     url = 'file:///Users/khushi/Desktop/hackathon/signup.html'
     webbrowser.open(url)
 
-    return history, similar_startups, report, conversation_history
+    road = generate_roadmap(user_input, api_key)
+
+    return history,road, similar_startups, report, conversation_history
 
 # Initialize Gradio app
 def init_app():
@@ -195,11 +218,12 @@ def init_app():
     similar_startups_output = gr.Textbox(label="Similar Startups", placeholder="Similar startups based on your idea", lines=5)
     report_output = gr.Textbox(label="Startup Analysis Report", placeholder="Generated report for your startup idea", lines=10)
     confirmation_checkbox = gr.Checkbox(label="Confirm that the LLM understands your idea correctly")
+    roadmap = gr.Textbox(label="Roadmap")
     input_button = gr.Button("Generate Website")
     app = gr.Interface(
        fn=gradio_interface,
        inputs=[input_textbox, gr.State(), confirmation_checkbox],
-       outputs=[output_textbox, similar_startups_output, report_output, gr.State()],
+       outputs=[output_textbox, roadmap, similar_startups_output, report_output, gr.State()],
        title="Chat with Startup Idea Validator",
        live=False
    )
