@@ -1,5 +1,10 @@
 name: 'Code Review using Ollama'
 description: 'Perform a code review on code modified using Ollama'
+
+on:
+  pull_request:
+    branches:
+      - main
 inputs:
   llm-model:
     description: 'Name of the LLM model to use for code review'
